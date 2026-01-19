@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { sanityClient, urlFor } from '../lib/sanity';
-import { Clock, ChevronRight, Search, TrendingUp, Calendar, User } from 'lucide-react';
+import { ChevronRight, Search, Calendar, User } from 'lucide-react';
 
 interface Post {
     _id: string;
@@ -21,7 +21,6 @@ const Home = () => {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                // Busca as 10 notícias mais recentes
                 const query = `*[_type == "post"] | order(publishedAt desc)[0..9]{
           _id, title, "slug": slug.current, mainImage, excerpt, publishedAt, _createdAt,
           author->{name},
@@ -34,7 +33,7 @@ const Home = () => {
         fetchPosts();
     }, []);
 
-    if (loading) return <div className="bg-black h-screen flex items-center justify-center text-white font-bold uppercase tracking-widest">Carregando notícias...</div>;
+    if (loading) return <div className="bg-black h-screen flex items-center justify-center text-white font-bold uppercase tracking-widest">Carregando Bora Jogador...</div>;
 
     const featuredPost = posts[0];
     const listPosts = posts.slice(1);
@@ -142,7 +141,7 @@ const Home = () => {
                         )}
                     </div>
 
-                    {/* --- 3. SIDEBAR DIREITA (Igual ao SinglePost) --- */}
+                    {/* --- 3. SIDEBAR DIREITA --- */}
                     <div className="lg:col-span-4 space-y-10">
 
                         {/* WIDGET PESQUISAR */}
@@ -155,3 +154,35 @@ const Home = () => {
                         </div>
 
                         {/* ADSENSE (Quadrado) */}
+                        <div className="bg-zinc-900/20 p-6 rounded border border-zinc-800 flex flex-col items-center justify-center">
+                            <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-3">Publicidade</span>
+                            <div className="w-[300px] h-[250px] bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold border border-zinc-800 uppercase tracking-widest text-xs">
+                                Espaço Google Ads
+                            </div>
+                        </div>
+
+                        {/* MAIS LIDAS */}
+                        <div>
+                            <h3 className="text-xl font-black italic uppercase mb-8 border-l-4 border-green-500 pl-4">Mais <span className="text-green-500">Lidas</span></h3>
+                            <div className="space-y-6">
+                                {[1, 2, 3, 4, 5].map((num) => (
+                                    <div key={num} className="flex items-center group cursor-pointer border-b border-zinc-900/50 pb-4 last:border-0">
+                                        <span className="text-4xl font-black text-zinc-800 mr-5 leading-none group-hover:text-green-900 transition">0{num}</span>
+                                        <div>
+                                            <h4 className="font-bold leading-tight text-xs text-zinc-300 group-hover:text-green-500 transition uppercase">
+                                                Análise Tática: Como o Palmeiras dominou o meio-campo
+                                            </h4>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Home;
