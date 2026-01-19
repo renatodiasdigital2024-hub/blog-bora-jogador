@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { sanityClient, urlFor } from '../lib/sanity';
-import { Clock, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, TrendingUp } from 'lucide-react';
 
 interface Post {
     _id: string;
@@ -22,23 +22,12 @@ const Home = () => {
         const fetchPosts = async () => {
             try {
                 const query = `*[_type == "post"] | order(_createdAt desc)[0..9]{
-          _id,
-          title, 
-          "slug": slug.current, 
-          mainImage, 
-          excerpt,
-          publishedAt,
-          _createdAt,
+          _id, title, "slug": slug.current, mainImage, excerpt, publishedAt, _createdAt,
           "category": categories[0]->{title, "slug": slug.current}
         }`;
-
                 const data = await sanityClient.fetch(query);
                 setPosts(data || []);
-            } catch (error) {
-                console.error("Erro:", error);
-            } finally {
-                setLoading(false);
-            }
+            } catch (error) { console.error("Erro:", error); } finally { setLoading(false); }
         };
         fetchPosts();
     }, []);
@@ -55,29 +44,17 @@ const Home = () => {
             {featuredPost && (
                 <section className="relative h-[60vh] md:h-[70vh] w-full group overflow-hidden border-b border-zinc-800">
                     <div className="absolute inset-0">
-                        {featuredPost.mainImage ? (
-                            <img
-                                src={urlFor(featuredPost.mainImage).width(1200).url()}
-                                alt={featuredPost.title}
-                                className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-700"
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-zinc-800" />
+                        {featuredPost.mainImage && (
+                            <img src={urlFor(featuredPost.mainImage).width(1200).url()} alt={featuredPost.title} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-700" />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
                     </div>
                     <div className="absolute bottom-0 left-0 w-full p-6 md:p-12 z-10 container mx-auto">
-                        {featuredPost.category && (
-                            <span className="bg-green-600 text-black text-xs font-black px-3 py-1 uppercase tracking-widest mb-4 inline-block">
-                                {featuredPost.category.title}
-                            </span>
-                        )}
+                        {featuredPost.category && <span className="bg-green-600 text-black text-xs font-black px-3 py-1 uppercase tracking-widest mb-4 inline-block">{featuredPost.category.title}</span>}
                         <h1 className="text-3xl md:text-5xl font-black italic uppercase leading-tight mb-4 max-w-4xl drop-shadow-xl">
                             <a href={`/post/${featuredPost.slug}`} className="hover:text-green-500 transition">{featuredPost.title}</a>
                         </h1>
-                        <a href={`/post/${featuredPost.slug}`} className="inline-flex items-center bg-white text-black font-bold uppercase text-sm px-6 py-3 hover:bg-green-500 transition">
-                            Ler Matéria <ChevronRight size={16} className="ml-2" />
-                        </a>
+                        <a href={`/post/${featuredPost.slug}`} className="inline-flex items-center bg-white text-black font-bold uppercase text-sm px-6 py-3 hover:bg-green-500 transition">Ler Matéria <ChevronRight size={16} className="ml-2" /></a>
                     </div>
                 </section>
             )}
@@ -86,7 +63,7 @@ const Home = () => {
             <div className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-                    {/* NOTÍCIAS */}
+                    {/* LISTA DE NOTÍCIAS */}
                     <div className="lg:col-span-8">
                         <div className="flex items-center mb-8 border-l-4 border-green-500 pl-4">
                             <h2 className="text-2xl font-black italic uppercase">Últimas <span className="text-green-500">do Futebol</span></h2>
@@ -118,15 +95,32 @@ const Home = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-10 border border-dashed border-zinc-700 text-center text-zinc-500 rounded">
-                                <p className="mb-2 font-bold text-white">Carregando notícias...</p>
-                                <p>Crie mais posts no Sanity para preencher esta lista!</p>
+                            <div className="p-10 border border-dashed border-zinc-700 text-center text-zinc-500 rounded bg-zinc-900/50">
+                                <p className="mb-2 font-bold text-white text-lg">A lista está esperando!</p>
+                                <p className="text-zinc-400">Você só tem 1 notícia (que já está no destaque lá em cima 👆).<br />Crie mais notícias no Sanity para elas aparecerem aqui em fila!</p>
                             </div>
                         )}
                     </div>
 
                     {/* SIDEBAR */}
                     <div className="lg:col-span-4 space-y-8">
+                        <div className="bg-zinc-900 p-6 rounded border-l-4 border-green-500">
+                            <h3 className="font-bold text-white uppercase text-sm mb-4 flex items-center">
+                                <TrendingUp size={16} className="mr-2 text-green-500" /> Mais Lidas
+                            </h3>
+                            <ul className="space-y-4">
+                                <li className="text-zinc-400 text-sm border-b border-zinc-800 pb-2 hover:text-green-500 cursor-pointer">
+                                    1. Tabela do Brasileirão atualizada
+                                </li>
+                                <li className="text-zinc-400 text-sm border-b border-zinc-800 pb-2 hover:text-green-500 cursor-pointer">
+                                    2. Os 10 maiores artilheiros do ano
+                                </li>
+                                <li className="text-zinc-400 text-sm hover:text-green-500 cursor-pointer">
+                                    3. Final da Libertadores: Onde assistir
+                                </li>
+                            </ul>
+                        </div>
+
                         <div className="bg-zinc-900 p-6 rounded border border-zinc-800 text-center">
                             <span className="text-xs font-bold text-zinc-500 uppercase block mb-2">Publicidade</span>
                             <div className="w-full h-64 bg-zinc-800 flex items-center justify-center text-zinc-600 font-bold">ADSENSE 300x250</div>

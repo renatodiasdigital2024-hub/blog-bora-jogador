@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { sanityClient, urlFor } from "../lib/sanity";
 import { PortableText } from "@portabletext/react";
-import { Calendar, User, AlertCircle } from "lucide-react";
+import { Calendar, User, AlertCircle, TrendingUp } from "lucide-react";
 
 interface Post {
   title: string;
   mainImage: any;
   body: any;
+  content: any; // Adicionado para garantir
   publishedAt: string;
-  _createdAt: string; // Adicionado fallback
+  _createdAt: string;
   author: { name: string };
   categories: { title: string }[];
 }
@@ -20,11 +21,12 @@ const SinglePost = () => {
 
   useEffect(() => {
     const fetchPost = async () => {
-      // Busca _createdAt também para corrigir o erro de data 1969
+      // TRUQUE: Busca tanto 'body' quanto 'content' para não ter erro
       const query = `*[slug.current == $slug][0]{
         title,
         mainImage,
         body,
+        content, 
         publishedAt,
         _createdAt,
         author->{name},
@@ -37,10 +39,11 @@ const SinglePost = () => {
     if (slug) fetchPost();
   }, [slug]);
 
-  if (!post) return <div className="text-white text-center py-20">Carregando...</div>;
+  if (!post) return <div className="text-white text-center py-20">Carregando notícia...</div>;
 
-  // CORREÇÃO DA DATA: Se publishedAt for nulo, usa _createdAt
   const displayDate = new Date(post.publishedAt || post._createdAt).toLocaleDateString();
+  // Usa o que tiver disponível: body ou content
+  const textContent = post.body || post.content;
 
   return (
     <div className="bg-black min-h-screen text-white font-sans pb-20">
@@ -48,9 +51,9 @@ const SinglePost = () => {
       {/* CABEÇALHO */}
       <div className="relative h-[50vh] w-full">
         {post.mainImage ? (
-          <img src={urlFor(post.mainImage).url()} alt={post.title} className="w-full h-full object-cover opacity-50" />
+          <img src={urlFor(post.mainImage).url()} alt={post.title} className="w-full h-full object-cover opacity-40" />
         ) : (
-          <div className="w-full h-full bg-zinc-800 opacity-50"></div>
+          <div className="w-full h-full bg-zinc-900 opacity-50"></div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
 
@@ -70,13 +73,13 @@ const SinglePost = () => {
         </div>
       </div>
 
-      {/* CONTEÚDO + SIDEBAR */}
       <div className="container mx-auto px-4 mt-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* CONTEÚDO DO TEXTO */}
         <div className="lg:col-span-8">
           <article className="prose prose-invert prose-lg prose-green max-w-none">
-            {post.body ? (
+            {textContent ? (
               <PortableText
-                value={post.body}
+                value={textContent}
                 components={{
                   types: {
                     image: ({ value }: any) => <img src={urlFor(value).url()} alt="Foto interna" className="w-full rounded-lg my-8" />,
@@ -87,19 +90,40 @@ const SinglePost = () => {
               <div className="bg-zinc-900 p-6 rounded border border-yellow-600 text-yellow-500 flex items-center">
                 <AlertCircle className="mr-3" />
                 <div>
-                  <strong>Ops! O texto sumiu.</strong><br />
-                  Verifique no Sanity se você escreveu no campo "Body" ou "Content". Pode ser que você tenha preenchido apenas o Resumo (Excerpt).
+                  <strong>Ops! O texto ainda não apareceu.</strong><br />
+                  Isso confirma que o campo no Sanity tem um nome diferente de 'body' ou 'content'.
                 </div>
               </div>
             )}
           </article>
         </div>
 
-        {/* SIDEBAR DO POST */}
+        {/* SIDEBAR MELHORADA */}
         <div className="lg:col-span-4 space-y-8">
+          {/* Widget 1: Autor */}
+          <div className="bg-zinc-900 p-6 rounded border-l-4 border-green-500">
+            <h3 className="font-bold text-white uppercase text-sm mb-2 flex items-center">
+              <TrendingUp size={16} className="mr-2 text-green-500" /> Em Alta
+            </h3>
+            <ul className="space-y-3">
+              <li className="text-zinc-400 text-sm border-b border-zinc-800 pb-2 hover:text-green-500 cursor-pointer">
+                • As maiores contratações da janela
+              </li>
+              <li className="text-zinc-400 text-sm border-b border-zinc-800 pb-2 hover:text-green-500 cursor-pointer">
+                • Análise tática: O novo esquema do Flamengo
+              </li>
+              <li className="text-zinc-400 text-sm hover:text-green-500 cursor-pointer">
+                • Quem cai e quem sobe no Brasileirão?
+              </li>
+            </ul>
+          </div>
+
+          {/* Widget 2: Publicidade */}
           <div className="bg-zinc-900 p-6 rounded border border-zinc-800 text-center">
             <span className="text-xs font-bold text-zinc-500 uppercase block mb-2">Publicidade</span>
-            <div className="w-full h-64 bg-zinc-800 flex items-center justify-center text-zinc-600 font-bold">ADSENSE 300x250</div>
+            <div className="w-full h-64 bg-zinc-800 flex items-center justify-center text-zinc-600 font-bold">
+              ESPAÇO GOOGLE ADS
+            </div>
           </div>
         </div>
       </div>
