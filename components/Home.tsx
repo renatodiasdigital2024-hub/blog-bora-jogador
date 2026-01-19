@@ -3,6 +3,7 @@ import { sanityClient, urlFor } from '../lib/sanity';
 import { Clock, ChevronRight, TrendingUp } from 'lucide-react';
 
 interface Post {
+    _id: string;
     title: string;
     slug: string;
     mainImage: any;
@@ -13,59 +14,49 @@ interface Post {
 }
 
 const Home = () => {
-    const [featuredPost, setFeaturedPost] = useState<Post | null>(null);
-    const [latestPosts, setLatestPosts] = useState<Post[]>([]);
-    const [marketPosts, setMarketPosts] = useState<Post[]>([]);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchPosts = async () => {
             try {
-                // 1. Busca Post Destaque (O mais novo)
-                const featuredQuery = `*[_type == "post"][0]{
+                // ESTRATÉGIA BLINDADA: Busca tudo de uma vez (Top 10 mais recentes)
+                // Isso evita erros se faltar alguma categoria específica
+                const query = `*[_type == "post"] | order(publishedAt desc)[0..9]{
+          _id,
           title, 
           "slug": slug.current, 
           mainImage, 
           excerpt,
-          "category": categories[0]->{title, "slug": slug.current}
-        }`;
-                const featured = await sanityClient.fetch(featuredQuery);
-                setFeaturedPost(featured);
-
-                // 2. Busca Últimas Notícias (Excluindo o destaque)
-                const latestQuery = `*[_type == "post" && _id != $featuredId] | order(publishedAt desc)[0..2]{
-          title, 
-          "slug": slug.current, 
-          mainImage, 
           publishedAt,
           "category": categories[0]->{title, "slug": slug.current}
         }`;
-                const latest = await sanityClient.fetch(latestQuery, { featuredId: featured?._id });
-                setLatestPosts(latest);
 
-                // 3. Busca Mercado da Bola (Exemplo de filtro por categoria)
-                const marketQuery = `*[_type == "post" && "mercado-da-bola" in categories[]->slug.current] | order(publishedAt desc)[0..1]{
-           title, 
-           "slug": slug.current, 
-           mainImage, 
-           excerpt, 
-           publishedAt,
-           "category": categories[0]->{title, "slug": slug.current}
-        }`;
-                const market = await sanityClient.fetch(marketQuery);
-                setMarketPosts(market);
-
+                const data = await sanityClient.fetch(query);
+                // Se der erro ou vier vazio, garante que seja um array vazio para não quebrar a tela
+                setPosts(data || []);
             } catch (error) {
-                console.error("Erro ao buscar notícias:", error);
+                console.error("Erro ao carregar notícias:", error);
+            } finally {
+                setLoading(false);
             }
         };
-        fetchData();
+        fetchPosts();
     }, []);
 
-    return (
-        <div className="bg-black text-white font-sans">
+    if (loading) return <div className="bg-black h-screen text-white flex items-center justify-center">Carregando o jogo...</div>;
 
-            {/* SEÇÃO HERO (DESTAQUE PRINCIPAL) */}
-            {featuredPost && (
+    // ORGANIZAÇÃO INTELIGENTE DOS DADOS
+    const featuredPost = posts[0]; // A notícia nº 1 vira o Destaque
+    const latestPosts = posts.slice(1, 4); // As notícias 2, 3 e 4 viram "Últimas"
+    // Procura se tem alguma notícia de Mercado da Bola nas 10 buscadas
+    const marketPosts = posts.filter(p => p.category?.slug === 'mercado-da-bola').slice(0, 2);
+
+    return (
+        <div className="bg-black text-white font-sans min-h-screen">
+
+            {/* 1. SEÇÃO HERO (DESTAQUE PRINCIPAL) */}
+            {featuredPost ? (
                 <section className="relative h-[70vh] w-full group overflow-hidden">
                     <div className="absolute inset-0">
                         {featuredPost.mainImage && (
@@ -89,54 +80,63 @@ const Home = () => {
                                 {featuredPost.title}
                             </a>
                         </h1>
-                        <p className="text-zinc-300 text-lg max-w-2xl mb-6 line-clamp-2 md:line-clamp-none">
+                        <p className="hidden md:block text-zinc-300 text-lg max-w-2xl mb-6 line-clamp-2">
                             {featuredPost.excerpt}
                         </p>
                         <a href={`/post/${featuredPost.slug}`} className="inline-flex items-center bg-white text-black font-bold uppercase text-sm px-6 py-3 hover:bg-green-500 transition">
-                            Ler Análise Completa <ChevronRight size={16} className="ml-2" />
+                            Ler Análise <ChevronRight size={16} className="ml-2" />
                         </a>
                     </div>
                 </section>
+            ) : (
+                // Fallback caso não tenha NENHUM post publicado
+                <div className="h-64 flex items-center justify-center text-zinc-500">
+                    Publique sua primeira notícia no Painel para ela aparecer aqui!
+                </div>
             )}
 
-            {/* SEÇÃO ÚLTIMAS NOTÍCIAS (GRID) */}
+            {/* 2. SEÇÃO ÚLTIMAS NOTÍCIAS (GRID) */}
             <section className="container mx-auto px-4 py-16">
                 <div className="flex items-center mb-8 border-l-4 border-green-500 pl-4">
                     <h2 className="text-2xl font-black italic uppercase">Últimas <span className="text-green-500">Notícias</span></h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {latestPosts.map((post, index) => (
-                        <div key={index} className="group cursor-pointer">
-                            <div className="overflow-hidden rounded-lg mb-4 relative h-64">
-                                <a href={`/post/${post.slug}`}>
-                                    {post.mainImage && (
-                                        <img
-                                            src={urlFor(post.mainImage).width(600).url()}
-                                            alt={post.title}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                                        />
-                                    )}
-                                    {post.category && (
-                                        <span className="absolute top-4 left-4 bg-green-600 text-black text-[10px] font-bold px-2 py-1 uppercase">
-                                            {post.category.title}
-                                        </span>
-                                    )}
-                                </a>
+                {latestPosts.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {latestPosts.map((post) => (
+                            <div key={post._id} className="group cursor-pointer">
+                                <div className="overflow-hidden rounded-lg mb-4 relative h-64">
+                                    <a href={`/post/${post.slug}`}>
+                                        {post.mainImage && (
+                                            <img
+                                                src={urlFor(post.mainImage).width(600).url()}
+                                                alt={post.title}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                                            />
+                                        )}
+                                        {post.category && (
+                                            <span className="absolute top-4 left-4 bg-green-600 text-black text-[10px] font-bold px-2 py-1 uppercase">
+                                                {post.category.title}
+                                            </span>
+                                        )}
+                                    </a>
+                                </div>
+                                <div className="flex items-center text-zinc-500 text-xs font-bold mb-2 space-x-2">
+                                    <Clock size={12} />
+                                    <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
+                                </div>
+                                <h3 className="text-xl font-bold uppercase leading-tight group-hover:text-green-500 transition">
+                                    <a href={`/post/${post.slug}`}>{post.title}</a>
+                                </h3>
                             </div>
-                            <div className="flex items-center text-zinc-500 text-xs font-bold mb-2 space-x-2">
-                                <Clock size={12} />
-                                <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
-                            </div>
-                            <h3 className="text-xl font-bold uppercase leading-tight group-hover:text-green-500 transition">
-                                <a href={`/post/${post.slug}`}>{post.title}</a>
-                            </h3>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-zinc-500">Mais notícias em breve...</p>
+                )}
             </section>
 
-            {/* SEÇÃO MERCADO DA BOLA (FEATURED 2) */}
+            {/* 3. SEÇÃO MERCADO DA BOLA (Só aparece se tiver notícia dessa categoria) */}
             {marketPosts.length > 0 && (
                 <section className="bg-zinc-900 py-16 border-y border-zinc-800">
                     <div className="container mx-auto px-4">
@@ -146,8 +146,8 @@ const Home = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {marketPosts.map((post, index) => (
-                                <div key={index} className="flex flex-col md:flex-row bg-black rounded-lg overflow-hidden border border-zinc-800 hover:border-green-500 transition group">
+                            {marketPosts.map((post) => (
+                                <div key={post._id} className="flex flex-col md:flex-row bg-black rounded-lg overflow-hidden border border-zinc-800 hover:border-green-500 transition group">
                                     <div className="md:w-1/2 h-64 md:h-auto overflow-hidden">
                                         <a href={`/post/${post.slug}`}>
                                             {post.mainImage && (
@@ -160,9 +160,6 @@ const Home = () => {
                                         </a>
                                     </div>
                                     <div className="p-6 md:w-1/2 flex flex-col justify-center">
-                                        {post.category && (
-                                            <span className="text-green-500 text-xs font-black uppercase mb-2">{post.category.title}</span>
-                                        )}
                                         <h3 className="text-xl font-bold uppercase leading-tight mb-3">
                                             <a href={`/post/${post.slug}`} className="hover:text-green-400 transition">{post.title}</a>
                                         </h3>
