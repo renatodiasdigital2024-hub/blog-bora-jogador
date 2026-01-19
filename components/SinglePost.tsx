@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { sanityClient, urlFor } from "../lib/sanity";
 import { PortableText } from "@portabletext/react";
-import { Calendar, User, Clock, Share2, Twitter, Link as LinkIcon, Search, ChevronRight, Home as HomeIcon } from "lucide-react";
+import { Calendar, User, Clock, Share2, Twitter, Link as LinkIcon, Search, ChevronRight, Home as HomeIcon, MessageCircle } from "lucide-react";
 
 interface Post {
   title: string;
@@ -13,6 +13,7 @@ interface Post {
   _createdAt: string;
   author: { name: string };
   categories: { title: string }[];
+  related: { title: string; mainImage: any; slug: string }[]; // Nova lista de relacionados
 }
 
 const SinglePost = () => {
@@ -21,9 +22,13 @@ const SinglePost = () => {
 
   useEffect(() => {
     const fetchPost = async () => {
+      // Query Turbinada: Busca o post + 3 posts aleatórios para o "Veja Também"
       const query = `*[slug.current == $slug][0]{
         title, mainImage, body, content, publishedAt, _createdAt,
-        author->{name}, categories[]->{title}
+        author->{name}, categories[]->{title},
+        "related": *[_type == "post" && slug.current != $slug][0..2]{
+          title, mainImage, "slug": slug.current
+        }
       }`;
       const data = await sanityClient.fetch(query, { slug });
       setPost(data);
@@ -31,79 +36,79 @@ const SinglePost = () => {
     if (slug) fetchPost();
   }, [slug]);
 
-  if (!post) return <div className="bg-black min-h-screen flex items-center justify-center text-white font-bold">CARREGANDO NOTÍCIA...</div>;
+  if (!post) return <div className="bg-black min-h-screen flex items-center justify-center text-white font-bold uppercase tracking-widest">Carregando notícia...</div>;
 
   const displayDate = new Date(post.publishedAt || post._createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
   const textContent = post.body || post.content;
   const categoryName = post.categories?.[0]?.title || "Notícias";
 
   return (
-    <div className="bg-black min-h-screen text-white font-sans pt-8 pb-20">
+    <div className="bg-black min-h-screen text-white font-sans pt-10 pb-20">
 
       <div className="container mx-auto px-4">
 
-        {/* 1. BREADCRUMBS (IGUAL AO PRINT) */}
-        <div className="flex items-center text-[10px] md:text-xs font-bold uppercase text-zinc-500 mb-8 space-x-2 tracking-widest">
-          <a href="/" className="hover:text-white flex items-center transition"><HomeIcon size={12} className="mr-1 mb-[2px]" /> INÍCIO</a>
-          <ChevronRight size={10} />
-          <span className="text-zinc-400">{categoryName}</span>
-          <ChevronRight size={10} />
-          <span className="text-green-500 truncate max-w-[200px]">{post.title}</span>
+        {/* --- 1. CAMINHO DO PÃO (BREADCRUMBS) --- */}
+        <div className="flex items-center text-[10px] font-bold uppercase text-zinc-500 mb-6 tracking-widest">
+          <a href="/" className="hover:text-green-500 flex items-center transition"><HomeIcon size={12} className="mr-2 mb-[1px]" /> INÍCIO</a>
+          <ChevronRight size={10} className="mx-2" />
+          <span className="text-zinc-400 hover:text-green-500 cursor-pointer transition">{categoryName}</span>
+          <ChevronRight size={10} className="mx-2" />
+          <span className="text-green-600 truncate max-w-[200px]">{post.title}</span>
         </div>
 
-        {/* 2. TÍTULO GIGANTE E BRANCO */}
-        <h1 className="text-3xl md:text-6xl font-black italic uppercase leading-tight mb-8 text-white max-w-5xl">
+        {/* --- 2. CABEÇALHO DO POST --- */}
+        <h1 className="text-3xl md:text-5xl lg:text-6xl font-black italic uppercase leading-none mb-8 text-white max-w-5xl tracking-tight">
           {post.title}
         </h1>
 
-        {/* 3. BARRA DE AUTOR E DATA (META INFO) */}
         <div className="flex flex-col md:flex-row md:items-center border-t border-b border-zinc-800 py-6 mb-10 gap-6">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center font-bold text-black uppercase mr-3">
+            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center font-bold text-black uppercase mr-3 shadow-[0_0_10px_rgba(22,163,74,0.5)]">
               {post.author?.name?.charAt(0) || "R"}
             </div>
             <div>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase block">Por</span>
-              <span className="text-sm font-bold text-white uppercase">{post.author?.name || "Redação Bora Jogador"}</span>
+              <span className="text-[9px] font-bold text-zinc-500 uppercase block tracking-wider">Por</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wide">{post.author?.name || "Redação Bora Jogador"}</span>
             </div>
           </div>
 
           <div className="hidden md:block w-px h-10 bg-zinc-800"></div>
 
-          <div className="flex items-center gap-6 text-xs font-bold text-zinc-400 uppercase">
+          <div className="flex items-center gap-6 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
             <div className="flex items-center"><Calendar size={14} className="mr-2 text-green-500" /> {displayDate}</div>
             <div className="flex items-center"><Clock size={14} className="mr-2 text-green-500" /> 5 min de leitura</div>
           </div>
         </div>
 
-        {/* 4. BOTÕES DE COMPARTILHAR (COLORIDOS) */}
-        <div className="flex space-x-3 mb-10">
-          <button className="bg-[#25D366] hover:brightness-110 text-white px-5 py-3 rounded font-bold text-xs uppercase flex items-center transition">
-            <Share2 size={16} className="mr-2" /> WhatsApp
-          </button>
-          <button className="bg-[#1DA1F2] hover:brightness-110 text-white px-5 py-3 rounded font-bold text-xs uppercase flex items-center transition">
-            <Twitter size={16} className="mr-2" /> Tweetar
-          </button>
-          <button className="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded font-bold text-xs uppercase flex items-center transition">
-            <LinkIcon size={16} className="mr-2" /> Copiar Link
-          </button>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
 
-          {/* --- COLUNA PRINCIPAL (TEXTO) --- */}
+          {/* --- COLUNA ESQUERDA (CONTEÚDO) --- */}
           <div className="lg:col-span-8">
-            {/* IMAGEM GIGANTE */}
-            <div className="w-full rounded-xl overflow-hidden mb-12 shadow-2xl border border-zinc-800">
+
+            {/* BOTÕES DE COMPARTILHAR */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              <button className="bg-[#25D366] hover:brightness-110 text-white px-5 py-3 rounded font-black text-[10px] uppercase flex items-center transition tracking-widest">
+                <Share2 size={16} className="mr-2" /> WhatsApp
+              </button>
+              <button className="bg-[#1DA1F2] hover:brightness-110 text-white px-5 py-3 rounded font-black text-[10px] uppercase flex items-center transition tracking-widest">
+                <Twitter size={16} className="mr-2" /> Tweetar
+              </button>
+              <button className="bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded font-black text-[10px] uppercase flex items-center transition tracking-widest">
+                <LinkIcon size={16} className="mr-2" /> Copiar Link
+              </button>
+            </div>
+
+            {/* IMAGEM DE CAPA */}
+            <div className="w-full rounded-xl overflow-hidden mb-12 shadow-2xl border border-zinc-800 relative group">
               {post.mainImage ? (
-                <img src={urlFor(post.mainImage).width(1200).url()} alt={post.title} className="w-full h-auto object-cover" />
+                <img src={urlFor(post.mainImage).width(1200).url()} alt={post.title} className="w-full h-auto object-cover group-hover:scale-105 transition duration-700" />
               ) : (
                 <div className="w-full h-96 bg-zinc-900 flex items-center justify-center text-zinc-600 font-bold uppercase">Sem Imagem de Capa</div>
               )}
             </div>
 
             {/* TEXTO DO POST */}
-            <article className="prose prose-invert prose-lg max-w-none prose-p:text-zinc-300 prose-headings:font-black prose-headings:italic prose-headings:uppercase prose-a:text-green-500">
+            <article className="prose prose-invert prose-lg max-w-none prose-p:text-zinc-300 prose-headings:font-black prose-headings:italic prose-headings:uppercase prose-a:text-green-500 prose-strong:text-white prose-blockquote:border-l-4 prose-blockquote:border-green-500 prose-blockquote:bg-zinc-900/50 prose-blockquote:p-4 prose-blockquote:italic">
               {textContent ? (
                 <PortableText
                   value={textContent}
@@ -112,49 +117,81 @@ const SinglePost = () => {
                   }}
                 />
               ) : (
-                <div className="p-8 border border-dashed border-red-900 bg-red-900/10 text-red-200 rounded text-center">
-                  <h3 className="font-bold text-xl mb-2">Conteúdo não encontrado</h3>
-                  <p>Verifique no Sanity se você escreveu o texto no campo correto.</p>
+                <div className="p-8 border border-dashed border-zinc-800 bg-zinc-900/30 text-zinc-500 rounded text-center">
+                  <p>Conteúdo em atualização...</p>
                 </div>
               )}
             </article>
+
+            {/* --- SEÇÃO: VEJA TAMBÉM --- */}
+            <div className="mt-16 border-t border-zinc-800 pt-10">
+              <h3 className="text-xl font-black italic uppercase mb-8 border-l-4 border-green-500 pl-4 text-white">Veja <span className="text-green-500">Também</span></h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {post.related?.map((item: any, idx: number) => (
+                  <a key={idx} href={`/post/${item.slug}`} className="group block">
+                    <div className="h-40 overflow-hidden rounded mb-3 border border-zinc-800">
+                      {item.mainImage ? (
+                        <img src={urlFor(item.mainImage).width(400).url()} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                      ) : <div className="w-full h-full bg-zinc-800" />}
+                    </div>
+                    <h4 className="font-bold text-xs uppercase leading-tight group-hover:text-green-500 transition line-clamp-2">{item.title}</h4>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* --- SEÇÃO: COMENTÁRIOS (Placeholder) --- */}
+            <div className="mt-16 bg-zinc-900/30 border border-zinc-800 rounded-lg p-10 text-center">
+              <MessageCircle size={40} className="mx-auto text-zinc-600 mb-4" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">Seção de Comentários</h3>
+              <p className="text-zinc-500 text-sm mb-6">Faça login para participar da discussão.</p>
+              <button className="bg-white text-black font-black uppercase text-xs px-8 py-3 hover:bg-green-500 transition">Fazer Login</button>
+            </div>
+
           </div>
 
-          {/* --- SIDEBAR (LATERAL) --- */}
-          <div className="lg:col-span-4 space-y-12">
+          {/* --- SIDEBAR DIREITA --- */}
+          <div className="lg:col-span-4 space-y-10">
 
-            {/* PESQUISAR */}
-            <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
-              <h3 className="text-xs font-bold text-green-500 uppercase mb-4 border-l-2 border-green-500 pl-3">Pesquisar no Blog</h3>
+            {/* WIDGET PESQUISAR (Estilo Dark Box) */}
+            <div className="bg-[#0a0a0a] p-6 rounded-lg border border-zinc-800 shadow-lg">
+              <h3 className="text-xs font-black text-green-500 uppercase mb-4 border-l-4 border-green-500 pl-3 tracking-widest">Pesquisar no Blog</h3>
               <div className="relative">
-                <input type="text" placeholder="Ex: Tática, Craques..." className="w-full bg-black border border-zinc-700 text-white px-4 py-4 rounded-lg focus:outline-none focus:border-green-500 text-sm font-medium" />
-                <Search className="absolute right-4 top-4 text-zinc-500" size={20} />
+                <input type="text" placeholder="Ex: Tática, Craques..." className="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-4 rounded focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm font-medium transition placeholder-zinc-600" />
+                <Search className="absolute right-4 top-4 text-zinc-500" size={18} />
               </div>
             </div>
 
-            {/* PUBLICIDADE */}
-            <div className="flex flex-col items-center justify-center p-6 bg-black border border-zinc-800 rounded-xl">
-              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mb-4">Publicidade</span>
-              <div className="w-[300px] h-[250px] bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold border border-zinc-800">
-                GOOGLE ADS
+            {/* ADSENSE (Quadrado) */}
+            <div className="bg-zinc-900/20 p-6 rounded border border-zinc-800 flex flex-col items-center justify-center">
+              <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-3">Publicidade</span>
+              <div className="w-[300px] h-[250px] bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold border border-zinc-800 uppercase tracking-widest text-xs">
+                Espaço Google Ads
               </div>
             </div>
 
-            {/* MAIS LIDAS */}
+            {/* MAIS LIDAS (Lista com Números) */}
             <div>
               <h3 className="text-xl font-black italic uppercase mb-8 border-l-4 border-green-500 pl-4">Mais <span className="text-green-500">Lidas</span></h3>
               <div className="space-y-6">
-                {[1, 2, 3, 4].map((num) => (
-                  <div key={num} className="flex items-start group cursor-pointer border-b border-zinc-900 pb-6 last:border-0">
-                    <span className="text-5xl font-black text-zinc-800 mr-5 leading-none group-hover:text-green-900 transition">0{num}</span>
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <div key={num} className="flex items-center group cursor-pointer border-b border-zinc-900/50 pb-4 last:border-0">
+                    <span className="text-4xl font-black text-zinc-800 mr-5 leading-none group-hover:text-green-900 transition">0{num}</span>
                     <div>
-                      <span className="text-[10px] font-bold text-green-500 uppercase mb-1 block">Em Alta</span>
-                      <h4 className="font-bold leading-tight text-sm text-zinc-200 group-hover:text-green-500 transition">
-                        Como o calendário de 2026 vai impactar os estaduais
+                      <h4 className="font-bold leading-tight text-xs text-zinc-300 group-hover:text-green-500 transition uppercase">
+                        Análise Tática: Como o Palmeiras dominou o meio-campo
                       </h4>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* ADSENSE VERTICAL (In-feed placeholder) */}
+            <div className="bg-zinc-900/20 p-4 rounded border border-zinc-800 min-h-[400px] flex flex-col items-center justify-center">
+              <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-3">Publicidade Vertical</span>
+              <div className="w-full h-full flex-1 bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold border border-zinc-800 uppercase text-xs">
+                AdSense Vertical
               </div>
             </div>
 
