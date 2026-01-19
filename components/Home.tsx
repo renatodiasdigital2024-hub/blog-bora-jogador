@@ -33,7 +33,7 @@ const Home = () => {
         fetchPosts();
     }, []);
 
-    if (loading) return <div className="bg-black h-screen flex items-center justify-center text-white font-bold uppercase tracking-widest">Carregando Bora Jogador...</div>;
+    if (loading) return <div className="bg-black h-screen flex items-center justify-center text-white font-bold uppercase tracking-widest">Carregando Notícias...</div>;
 
     const featuredPost = posts[0];
     const listPosts = posts.slice(1);
@@ -52,7 +52,7 @@ const Home = () => {
                                 className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition duration-700 ease-out"
                             />
                         ) : (
-                            <div className="w-full h-full bg-zinc-900" />
+                            <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold uppercase">Sem Imagem de Capa</div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
                     </div>
@@ -85,7 +85,7 @@ const Home = () => {
             <div className="container mx-auto px-4 py-16">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-                    {/* COLUNA ESQUERDA (LISTA DE NOTÍCIAS) */}
+                    {/* COLUNA ESQUERDA (LISTA) */}
                     <div className="lg:col-span-8">
                         <div className="flex items-center mb-10 border-l-4 border-green-500 pl-4">
                             <h2 className="text-2xl font-black italic uppercase tracking-tighter">Últimas <span className="text-green-500">Notícias</span></h2>
@@ -95,36 +95,19 @@ const Home = () => {
                             <div className="flex flex-col gap-10">
                                 {listPosts.map((post) => (
                                     <div key={post._id} className="flex flex-col md:flex-row gap-6 border-b border-zinc-900 pb-10 group">
-                                        {/* Imagem da Notícia */}
                                         <div className="md:w-5/12 h-52 overflow-hidden rounded-lg relative border border-zinc-800">
                                             <a href={`/post/${post.slug}`}>
                                                 {post.mainImage ? (
-                                                    <img
-                                                        src={urlFor(post.mainImage).width(600).height(400).url()}
-                                                        alt={post.title}
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold text-xs uppercase">Sem Foto</div>
-                                                )}
-                                                {post.category && (
-                                                    <span className="absolute top-3 left-3 bg-black/80 text-white border border-green-500 text-[9px] font-black px-2 py-1 uppercase tracking-wider">
-                                                        {post.category.title}
-                                                    </span>
-                                                )}
+                                                    <img src={urlFor(post.mainImage).width(600).height(400).url()} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                                                ) : (<div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold text-xs uppercase">Sem Foto</div>)}
+                                                {post.category && <span className="absolute top-3 left-3 bg-black/80 text-white border border-green-500 text-[9px] font-black px-2 py-1 uppercase tracking-wider">{post.category.title}</span>}
                                             </a>
                                         </div>
-
-                                        {/* Texto da Notícia */}
                                         <div className="md:w-7/12 flex flex-col justify-center">
                                             <h3 className="text-xl md:text-2xl font-black italic uppercase leading-tight mb-3">
-                                                <a href={`/post/${post.slug}`} className="hover:text-green-500 transition text-white">
-                                                    {post.title}
-                                                </a>
+                                                <a href={`/post/${post.slug}`} className="hover:text-green-500 transition text-white">{post.title}</a>
                                             </h3>
-                                            <p className="text-zinc-400 text-sm line-clamp-2 mb-4 font-medium leading-relaxed">
-                                                {post.excerpt || "Clique para ler a matéria completa sobre este assunto no Bora Jogador."}
-                                            </p>
+                                            <p className="text-zinc-400 text-sm line-clamp-2 mb-4 font-medium leading-relaxed">{post.excerpt}</p>
                                             <div className="flex items-center text-zinc-500 text-[10px] font-bold uppercase tracking-widest space-x-4">
                                                 <span className="flex items-center"><Calendar size={12} className="mr-1 text-green-600" /> {new Date(post.publishedAt || post._createdAt).toLocaleDateString()}</span>
                                                 <span className="flex items-center"><User size={12} className="mr-1 text-green-600" /> {post.author?.name || "Redação"}</span>
@@ -136,24 +119,24 @@ const Home = () => {
                         ) : (
                             <div className="p-10 border border-dashed border-zinc-800 bg-zinc-900/30 text-center rounded-lg">
                                 <p className="text-zinc-400 font-bold mb-2">A lista está vazia!</p>
-                                <p className="text-zinc-600 text-sm">Crie mais posts no Sanity (com imagens!) para preencher este espaço.</p>
+                                <p className="text-zinc-600 text-sm">Crie mais posts no Sanity para preencher este espaço.</p>
                             </div>
                         )}
                     </div>
 
-                    {/* --- 3. SIDEBAR DIREITA --- */}
+                    {/* --- 3. SIDEBAR (Anúncios Aqui) --- */}
                     <div className="lg:col-span-4 space-y-10">
 
-                        {/* WIDGET PESQUISAR */}
+                        {/* PESQUISAR */}
                         <div className="bg-[#0a0a0a] p-6 rounded-lg border border-zinc-800 shadow-lg">
-                            <h3 className="text-xs font-black text-green-500 uppercase mb-4 border-l-4 border-green-500 pl-3 tracking-widest">Pesquisar no Blog</h3>
+                            <h3 className="text-xs font-black text-green-500 uppercase mb-4 border-l-4 border-green-500 pl-3 tracking-widest">Pesquisar</h3>
                             <div className="relative">
-                                <input type="text" placeholder="Ex: Tática, Craques..." className="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-4 rounded focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 text-sm font-medium transition placeholder-zinc-600" />
+                                <input type="text" placeholder="Ex: Tática..." className="w-full bg-zinc-900 border border-zinc-800 text-white px-4 py-4 rounded focus:outline-none focus:border-green-500 text-sm" />
                                 <Search className="absolute right-4 top-4 text-zinc-500" size={18} />
                             </div>
                         </div>
 
-                        {/* ADSENSE (Quadrado) */}
+                        {/* --- ESPAÇO ADSENSE 1 --- */}
                         <div className="bg-zinc-900/20 p-6 rounded border border-zinc-800 flex flex-col items-center justify-center">
                             <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-3">Publicidade</span>
                             <div className="w-[300px] h-[250px] bg-zinc-900 flex items-center justify-center text-zinc-700 font-bold border border-zinc-800 uppercase tracking-widest text-xs">
@@ -168,11 +151,7 @@ const Home = () => {
                                 {[1, 2, 3, 4, 5].map((num) => (
                                     <div key={num} className="flex items-center group cursor-pointer border-b border-zinc-900/50 pb-4 last:border-0">
                                         <span className="text-4xl font-black text-zinc-800 mr-5 leading-none group-hover:text-green-900 transition">0{num}</span>
-                                        <div>
-                                            <h4 className="font-bold leading-tight text-xs text-zinc-300 group-hover:text-green-500 transition uppercase">
-                                                Análise Tática: Como o Palmeiras dominou o meio-campo
-                                            </h4>
-                                        </div>
+                                        <div><h4 className="font-bold leading-tight text-xs text-zinc-300 group-hover:text-green-500 transition uppercase">Análise Tática: Como o Palmeiras dominou</h4></div>
                                     </div>
                                 ))}
                             </div>
