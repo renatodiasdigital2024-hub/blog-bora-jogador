@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { sanityClient, urlFor } from '../lib/sanity';
-import { Clock, ChevronRight, TrendingUp, User } from 'lucide-react';
+import { Clock, ChevronRight } from 'lucide-react';
 
 interface Post {
     _id: string;
@@ -9,7 +9,7 @@ interface Post {
     mainImage: any;
     excerpt: string;
     publishedAt: string;
-    _createdAt: string; // Plano B para a data
+    _createdAt: string;
     author: { name: string };
     category: { title: string; slug: string };
 }
@@ -21,7 +21,6 @@ const Home = () => {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                // Busca 10 posts
                 const query = `*[_type == "post"] | order(_createdAt desc)[0..9]{
           _id,
           title, 
@@ -47,12 +46,12 @@ const Home = () => {
     if (loading) return <div className="bg-black h-screen text-white flex items-center justify-center">Carregando...</div>;
 
     const featuredPost = posts[0];
-    const listPosts = posts.slice(1); // Restante das notícias
+    const listPosts = posts.slice(1);
 
     return (
         <div className="bg-black text-white font-sans min-h-screen">
 
-            {/* 1. DESTAQUE GIGANTE (Igual estava, pois ficou bonito) */}
+            {/* DESTAQUE */}
             {featuredPost && (
                 <section className="relative h-[60vh] md:h-[70vh] w-full group overflow-hidden border-b border-zinc-800">
                     <div className="absolute inset-0">
@@ -83,10 +82,11 @@ const Home = () => {
                 </section>
             )}
 
+            {/* CONTEÚDO + SIDEBAR */}
             <div className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-                    {/* 2. COLUNA ESQUERDA - LISTA DE NOTÍCIAS (8 Colunas) */}
+                    {/* NOTÍCIAS */}
                     <div className="lg:col-span-8">
                         <div className="flex items-center mb-8 border-l-4 border-green-500 pl-4">
                             <h2 className="text-2xl font-black italic uppercase">Últimas <span className="text-green-500">do Futebol</span></h2>
@@ -119,27 +119,17 @@ const Home = () => {
                             </div>
                         ) : (
                             <div className="p-10 border border-dashed border-zinc-700 text-center text-zinc-500 rounded">
-                                <p className="mb-2 font-bold text-white">O site precisa de combustível! ⛽</p>
-                                <p>Você tem apenas 1 post (que está no destaque). Crie mais 3 posts no Sanity para ver esta lista encher!</p>
+                                <p className="mb-2 font-bold text-white">Carregando notícias...</p>
+                                <p>Crie mais posts no Sanity para preencher esta lista!</p>
                             </div>
                         )}
                     </div>
 
-                    {/* 3. COLUNA DIREITA - SIDEBAR (4 Colunas) */}
+                    {/* SIDEBAR */}
                     <div className="lg:col-span-4 space-y-8">
-                        {/* Widget de Anúncio */}
                         <div className="bg-zinc-900 p-6 rounded border border-zinc-800 text-center">
                             <span className="text-xs font-bold text-zinc-500 uppercase block mb-2">Publicidade</span>
-                            <div className="w-full h-64 bg-zinc-800 flex items-center justify-center text-zinc-600 font-bold">
-                                ADSENSE 300x250
-                            </div>
-                        </div>
-
-                        {/* Widget Redes Sociais */}
-                        <div className="bg-green-600 p-6 rounded text-center">
-                            <h3 className="font-black italic uppercase text-black text-xl mb-2">Siga o Bora Jogador</h3>
-                            <p className="text-black text-sm font-medium mb-4">Análises táticas e notícias exclusivas.</p>
-                            <button className="bg-black text-white w-full py-2 font-bold uppercase text-xs hover:bg-zinc-800 transition">Instagram</button>
+                            <div className="w-full h-64 bg-zinc-800 flex items-center justify-center text-zinc-600 font-bold">ADSENSE 300x250</div>
                         </div>
                     </div>
 
